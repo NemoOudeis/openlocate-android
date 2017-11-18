@@ -21,18 +21,18 @@
  */
 package com.openlocate.android.core;
 
+import android.app.Activity;
+import android.support.annotation.NonNull;
+
 import com.openlocate.android.callbacks.OpenLocateLocationCallback;
-import com.openlocate.android.exceptions.GooglePlayServicesNotAvailable;
-import com.openlocate.android.exceptions.InvalidConfigurationException;
 import com.openlocate.android.exceptions.LocationDisabledException;
 import com.openlocate.android.exceptions.LocationPermissionException;
 
 interface OpenLocateLocationTracker {
-    void startTracking()
-            throws InvalidConfigurationException,
-            LocationDisabledException,
-            LocationPermissionException,
-            GooglePlayServicesNotAvailable;
+
+    void startTracking(Activity activity);
+
+    void onPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults);
 
     void getCurrentLocation(OpenLocateLocationCallback callback)
             throws LocationDisabledException,

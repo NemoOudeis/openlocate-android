@@ -21,6 +21,8 @@
  */
 package com.openlocate.android.core;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,6 +30,7 @@ import android.location.Location;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
@@ -48,6 +51,8 @@ import com.openlocate.android.exceptions.LocationPermissionException;
 import java.util.HashMap;
 
 public class OpenLocate implements OpenLocateLocationTracker {
+
+    private static final int LOCATION_PERMISSION_REQUEST = 1001;
 
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -283,9 +288,17 @@ public class OpenLocate implements OpenLocateLocationTracker {
     }
 
     public static OpenLocate initialize(Configuration configuration) {
+
         if (sharedInstance == null) {
             sharedInstance = new OpenLocate(configuration);
         }
+
+        boolean trackingEnabled = SharedPreferenceUtils.getInstance(configuration.context).getBoolanValue(Constants.TRACKING_STATUS, false);
+
+        if (trackingEnabled) {
+            sharedInstance.onPermissionsGranted();
+        }
+
         return sharedInstance;
     }
 
@@ -297,9 +310,28 @@ public class OpenLocate implements OpenLocateLocationTracker {
     }
 
     @Override
-    public void startTracking()
-            throws InvalidConfigurationException, LocationDisabledException, LocationPermissionException, GooglePlayServicesNotAvailable {
-        validateTrackingCapabilities();
+    public void startTracking(Activity activity)  {
+
+        if (SharedPreferenceUtils.getInstance(context).getBoolanValue(Constants.TRACKING_STATUS, false)) {
+            onPermissionsGranted();
+        } else {
+            if (LocationService.hasLocationPermission(context)) {
+                validateTrackingCapabilities();
+                onPermissionsGranted();
+            } else {
+                ActivityCompat.requestPermissions(
+                        activity,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
+                        LOCATION_PERMISSION_REQUEST);
+            }
+
+        }
+
+    }
+
+    void onPermissionsGranted() {
+
+        SharedPreferenceUtils.getInstance(context).setValue(Constants.TRACKING_STATUS, true);
 
         FetchAdvertisingInfoTask task = new FetchAdvertisingInfoTask(context, new FetchAdvertisingInfoTaskCallback() {
             @Override
@@ -311,8 +343,27 @@ public class OpenLocate implements OpenLocateLocationTracker {
     }
 
     @Override
+    public void onPermissionResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST && granted(grantResults)) {
+            onPermissionsGranted();
+        }
+    }
+
+    private boolean granted(@NonNull int[] grantResults) {
+
+        for (int grantResult : grantResults) {
+
+            if (grantResult == -1) {
+                return false;
+            }
+
+        }
+        return true;
+    }
+
+    @Override
     public void getCurrentLocation(final OpenLocateLocationCallback callback) throws LocationDisabledException, LocationPermissionException {
-        validateLocationPermission();
         validateLocationEnabled();
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context);
@@ -396,14 +447,10 @@ public class OpenLocate implements OpenLocateLocationTracker {
         intent.putExtra(Constants.TRANSMISSION_INTERVAL_KEY, transmissionInterval);
     }
 
-    private void validateTrackingCapabilities()
-            throws InvalidConfigurationException, LocationPermissionException, LocationDisabledException, GooglePlayServicesNotAvailable {
+    private void validateTrackingCapabilities(){
 
-        validateGooglePlayServices();
         warnIfLocationServicesAreAlreadyRunning();
         validateConfiguration();
-        validateLocationPermission();
-        validateLocationEnabled();
     }
 
     private void validateConfiguration() throws InvalidConfigurationException {
@@ -430,16 +477,7 @@ public class OpenLocate implements OpenLocateLocationTracker {
         }
     }
 
-    private void validateLocationPermission() throws LocationPermissionException {
-        if (!LocationService.hasLocationPermission(context)) {
-            String message = "Location permission is denied. Please enable location permission.";
 
-            Log.e(TAG, message);
-            throw new LocationPermissionException(
-                    message
-            );
-        }
-    }
 
     private void validateLocationEnabled() throws LocationDisabledException {
         if (!LocationService.isLocationEnabled(context)) {

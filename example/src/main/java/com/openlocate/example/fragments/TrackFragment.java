@@ -22,37 +22,23 @@
  */
 package com.openlocate.example.fragments;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.openlocate.android.core.OpenLocate;
-import com.openlocate.android.exceptions.GooglePlayServicesNotAvailable;
-import com.openlocate.android.exceptions.InvalidConfigurationException;
-import com.openlocate.android.exceptions.LocationDisabledException;
-import com.openlocate.android.exceptions.LocationPermissionException;
-import com.openlocate.example.BuildConfig;
 import com.openlocate.example.R;
 import com.openlocate.example.activities.MainActivity;
 
-import java.util.HashMap;
-
 public class TrackFragment extends Fragment {
 
-    private static final int LOCATION_PERMISSION = 1001;
     private static String TAG = MainActivity.class.getSimpleName();
 
     private Activity activity;
@@ -104,29 +90,9 @@ public class TrackFragment extends Fragment {
     }
 
     private void startTracking() {
-
-        try {
-
-            OpenLocate.getInstance().startTracking();
-
-            Toast.makeText(activity, getString(R.string.sercive_started), Toast.LENGTH_LONG).show();
-            onStartService();
-        } catch (InvalidConfigurationException | LocationDisabledException e) {
-            Toast.makeText(activity, e.getMessage(), Toast.LENGTH_LONG).show();
-            Log.e(TAG, e.getMessage());
-        } catch (LocationPermissionException e) {
-            ActivityCompat.requestPermissions(
-                    activity,
-                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION},
-                    LOCATION_PERMISSION
-            );
-        } catch (GooglePlayServicesNotAvailable e) {
-            GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
-            int resultCode = apiAvailability.isGooglePlayServicesAvailable(activity);
-            if (resultCode != ConnectionResult.SUCCESS && apiAvailability.isUserResolvableError(resultCode)) {
-                apiAvailability.getErrorDialog(activity, resultCode, 9000).show();
-            }
-        }
+        OpenLocate.getInstance().startTracking(getActivity());
+        Toast.makeText(activity, getString(R.string.sercive_started), Toast.LENGTH_LONG).show();
+        onStartService();
     }
 
     private void stopTracking() {
@@ -137,17 +103,7 @@ public class TrackFragment extends Fragment {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case LOCATION_PERMISSION:
-                onLocationRequestResult(grantResults);
-                break;
-        }
-    }
-
-    private void onLocationRequestResult(@NonNull int[] grantResults) {
-        if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            startTracking();
-        }
+        OpenLocate.getInstance().onPermissionResult(requestCode, permissions, grantResults);
     }
 
     private void onStartService() {
