@@ -26,7 +26,8 @@ import com.google.android.gms.location.LocationRequest;
 public enum LocationAccuracy {
     LOW(LocationRequest.PRIORITY_LOW_POWER),
     MEDIUM(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY),
-    HIGH(LocationRequest.PRIORITY_HIGH_ACCURACY);
+    HIGH(LocationRequest.PRIORITY_HIGH_ACCURACY),
+    NO_POWER(LocationRequest.PRIORITY_NO_POWER);
 
     private final int locationRequestAccuracy;
     LocationAccuracy(int locationRequestAccuracy) {

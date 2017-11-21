@@ -33,6 +33,7 @@ public class LocationAccuracyTests {
         Assert.assertEquals(LocationAccuracy.HIGH.toString(), "high");
         Assert.assertEquals(LocationAccuracy.LOW.toString(), "low");
         Assert.assertEquals(LocationAccuracy.MEDIUM.toString(), "medium");
+        Assert.assertEquals(LocationAccuracy.NO_POWER.toString(), "no_power");
     }
 
     @Test
@@ -40,6 +41,7 @@ public class LocationAccuracyTests {
         Assert.assertEquals(LocationAccuracy.HIGH.getLocationRequestAccuracy(), LocationRequest.PRIORITY_HIGH_ACCURACY);
         Assert.assertEquals(LocationAccuracy.MEDIUM.getLocationRequestAccuracy(), LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
         Assert.assertEquals(LocationAccuracy.LOW.getLocationRequestAccuracy(), LocationRequest.PRIORITY_LOW_POWER);
+        Assert.assertEquals(LocationAccuracy.NO_POWER.getLocationRequestAccuracy(), LocationRequest.PRIORITY_NO_POWER);
     }
 
     @Test
@@ -47,6 +49,7 @@ public class LocationAccuracyTests {
         Assert.assertEquals(LocationAccuracy.valueOf("HIGH"), LocationAccuracy.HIGH);
         Assert.assertEquals(LocationAccuracy.valueOf("LOW"), LocationAccuracy.LOW);
         Assert.assertEquals(LocationAccuracy.valueOf("MEDIUM"), LocationAccuracy.MEDIUM);
+        Assert.assertEquals(LocationAccuracy.valueOf("NO_POWER"), LocationAccuracy.NO_POWER);
     }
 
     @Test
